@@ -3,13 +3,22 @@ A simple Transformer model to finish image caption task.
 # 这是一个非常简单的image_caption任务，如果有帮助希望你可以三连噢！！！
 1.数据处理未使用GPU加速，因此速度很慢（能运行就万岁）
 2.需要提前下载coco数据集到对应文件夹中，然后在主程序代码中修改coco数据集的路径：
+
 ![image](https://github.com/neuljh/image_caption/assets/132900799/dee3c41b-bcf4-4adb-b342-998e9ce47fba)
+
 3.自定义你的参数：
+
 ![image](https://github.com/neuljh/image_caption/assets/132900799/0fcea603-643e-456b-ac34-3ca6f52415bd)
+
 4.代码中有合理的注释可以参考。
+
 5.详细步骤：
+
 (1)初步完成
+
 1)导入对应的库
+
+```python
 import sys
 import tensorflow as tf
 import numpy as np
@@ -36,8 +45,11 @@ from pycocoevalcap.cider.cider import Cider
 from pycocoevalcap.meteor.meteor import Meteor
 from pycocoevalcap.spice.spice import Spice
 import random
+```
 
 2)申明必要的变量
+
+```python
 # Define the maximum length of the caption
 max_len = 30
 # Define the number of rows and columns in the grid
@@ -61,9 +73,13 @@ train_caption_file = os.path.join(annotations_dir,  'captions_train2017.json')
 val_caption_file = os.path.join(annotations_dir,  'captions_val2017.json')
 print("train_caption_file: "+train_caption_file)
 print("val_caption_file: "+train_caption_file)
+```
 
 3)重要函数说明
+
 ①　计算Image Caption模型的评估指标
+
+```python
 def caculate_evaluation_indicator(model, val_set, word_index, reverse_word_index):
     # val_set_percent = val_set[:int(score_percent*len(val_set))]
     val_set_percent = random.sample(val_set, int(score_percent * len(val_set)))
@@ -108,6 +124,8 @@ def caculate_evaluation_indicator(model, val_set, word_index, reverse_word_index
     METEOR = meteor_scores[0]
     # SPICE = spice_scores['Spice']
     return BLEU_1, BLEU_2, BLEU_3, BLEU_4, ROUGE, CIDEr, METEOR
+```
+
 用于计算机器学习模型的评估指标，接受4个参数：model（机器学习模型），val_set（验证集数据），word_index（词汇表）和reverse_word_index（反向词汇表）。
 该函数首先从验证集中随机选取一定比例的数据，生成对应的参考和预测文本列表。然后将这些文本列表转换为参考和预测语料库，并计算BLEU、ROUGE、CIDEr、METEOR指标。
 返回的是BLEU-1到BLEU-4、ROUGE、CIDEr和METEOR指标的值。
@@ -121,6 +139,8 @@ WMD（Word Mover's Distance）：这是一种衡量词汇相似度的指标，�
 
 ②　Generate captions for a sample image
 # Generate captions for a sample image
+
+```python
 def generate_caption(model, image_file_path_or_image_data, word_index, reverse_word_index, is_data, max_len=30):
     if is_data is False:
         # open the image
@@ -148,6 +168,7 @@ def generate_caption(model, image_file_path_or_image_data, word_index, reverse_w
     caption = [reverse_word_index[int(i)] for i in caption[0] if i > 0]
     # Return the caption as a string
     return ' '.join(caption)
+```
 
 该函数接受以下参数：
 model: 训练好的神经网络模型，用于生成图像描述
@@ -159,6 +180,8 @@ def generate_caption(model, image_file_path_or_image_data, word_index, reverse_w
 该函数的主要作用是生成输入图像的描述。函数首先根据输入的参数来加载图像数据，然后初始化一个描述，其中第一个单词是"<start>"。之后，函数将循环处理并预测每个单词，直到生成描述的最大长度或直到遇到结束标记"<end>"。最后，函数将生成的描述从单词的整数标识符转换为单词本身，并将其作为字符串返回。
 
 ③　展示模型验证集结果
+
+```python
 def show_model_res(model, rows, cols, fig_size, word_index, reverse_word_index, val_images, val_set):
     # Define the figure and axis objects
     fig, axs = plt.subplots(rows, cols, figsize=fig_size)
@@ -190,6 +213,7 @@ def show_model_res(model, rows, cols, fig_size, word_index, reverse_word_index, 
     fig.tight_layout()
     # Show the plot
     plt.show()
+```
 
 用于显示图像及其对应的预测和真实文本标题。以下是该函数中各个参数和操作的详细解释：
 model：神经网络模型。
@@ -203,6 +227,8 @@ def show_model_res(model, rows, cols, fig_size, word_index, reverse_word_index, 
 创建一个图像及其标题的网格，行数为 rows，列数为 cols，图像大小为 fig_size。对于每一个子图像，随机选择一个验证图像并生成对应的标题。从 val_set 中查找对应的真实标题。显示图像及其预测和真实标题，如果预测标题和真实标题相同，则标题显示为绿色，否则为红色。最后，调整子图像之间的间距并显示整个图像。
 
 ④　展示训练结果
+
+```python
 def show_train_res(history):
     # Plot training & validation loss values
     plt.plot(history.history['loss'])
@@ -212,20 +238,29 @@ def show_train_res(history):
     plt.xlabel('Epoch')
     plt.legend(['Train', 'Test'], loc='upper left')
     plt.show()
+```
+
 在函数中，训练集损失值（history.history['loss']）和验证集损失值（history.history['val_loss']）是从history参数中提取的，然后使用plt.plot()函数将它们绘制在同一个图表中。plt.title()用于设置图表的标题，plt.ylabel()和plt.xlabel()分别用于设置y轴和x轴的标签。plt.legend()函数用于设置图例，'Train'和'Test'表示训练集和验证集，loc='upper left'表示图例位于左上角。最后，plt.show()函数将图表显示出来。
 
 4)主函数
+
 # 加载注释文件
+
+```python
 with open(train_caption_file, 'r') as f:
     train_captions = json.load(f)['annotations']
 with open(val_caption_file, 'r') as f:
     val_captions = json.load(f)['annotations']
+```
+
 使用了 Python 中的 with 语句来打开两个 JSON 格式的文件并加载它们。with 语句用于在代码块结束后自动关闭文件。其中，变量 train_caption_file 和 val_caption_file 分别表示要打开的训练数据和验证数据的 JSON 文件名。
 第一行代码中，open(train_caption_file, 'r') 打开名为 train_caption_file 的文件并指定以只读方式打开。然后，json.load(f) 将文件的内容加载到一个 Python 字典中，其中 f 是对打开文件的引用。接下来，使用字典键 annotations 获取文件中的 annotations 字段的值，并将其存储在 train_captions 变量中。
 第二行代码中，open(val_caption_file, 'r') 打开名为 val_caption_file 的文件，并使用 json.load(f) 加载文件内容到一个 Python 字典中。同样，使用 annotations 键获取字典中的 annotations 字段的值，并将其存储在 val_captions 变量中。
 总之，这段代码的作用是打开两个 JSON 文件，读取它们的内容，并将每个文件中的 annotations 字段的值分别存储在 train_captions 和 val_captions 变量中。这通常是用于加载训练和验证数据的一种常见方式，这些数据通常被存储在 JSON 或其他常用格式中。
 
 # 创建字典将图片ID与其文件名对应
+
+```python
 train_id_to_file = {}
 for filename in os.listdir(train_image_dir):
     train_id_to_file[int(filename.split('.')[0])] = os.path.join(train_image_dir, filename)
@@ -237,17 +272,22 @@ for key, value in train_id_to_file.items():
     train_id_to_file[key] = value.replace('\\', '/')
 for key, value in val_id_to_file.items():
     val_id_to_file[key] = value.replace('\\', '/')
+```
+
 首先创建两个空字典 train_id_to_file 和 val_id_to_file，用于存储训练集和验证集中的图像文件 ID 与其文件名的对应关系。其中，os.listdir(train_image_dir) 和 os.listdir(val_image_dir) 分别返回训练集和验证集图像文件所在目录中的所有文件名。
 接着，通过循环遍历目录中的文件名，并用 int(filename.split('.')[0]) 的方式将文件名中的数字部分（即文件 ID）提取出来，将其作为键值存入字典 train_id_to_file 或 val_id_to_file 中，并将其对应的文件名作为值。
 最后，通过循环迭代字典中的所有值，将字符串中的反斜杠 \ 替换为正斜杠 /，这样就能够避免在后续的代码中出现路径错误的问题。
 最终，其目的是为了将训练集和验证集中的图像文件与其对应的文件名进行匹配。
 
 # 构建训练集和验证集
+```python
 train_set = []
 val_set = []
 print("length of train_captions: " + str(len(train_captions)))
 print("length of val_captions: " + str(len(val_captions)))
+```
 # 测试代码
+```python
 test_train_len = int(train_percent * len(train_captions))
 test_val_len = int(val_percent * len(val_captions))
 BLOCK_NUM = 1000
@@ -294,16 +334,21 @@ for caption in tqdm(val_captions_sub, file=sys.stdout):
     index = index + 1
     # if index%1000 == 999:
     #     print("val_data_pre_process [{}/{}]:".format(int(len(train_captions)/BLOCK_NUM), int(index/BLOCK_NUM)+1))
+```
+
 这段代码的作用是构建训练集和验证集，并对它们进行预处理，以便将它们用于图像字幕生成模型的训练和验证。
 首先，创建了两个空列表 train_set 和 val_set 用于存储预处理后的数据。然后通过打印信息，输出了训练集和验证集的长度。
 接下来，对训练集和验证集进行预处理。首先通过随机抽样，将训练集和验证集分别缩小到一定的比例，以便更快地进行训练和验证。这里通过 random.sample 函数随机抽样，抽取了训练集中 test_train_len 个样本和验证集中 test_val_len 个样本。
 然后，遍历训练集和验证集中的样本，并逐个进行预处理。每个样本包含图像和相应的字幕，因此需要对它们进行处理。对于每个样本，首先获取图像的 ID 和文件路径，并加载图像。然后将图像调整为相同的大小，这里的大小是 (224, 224)。接下来，将字节字符串转换为 Unicode 字符串，以便后续处理。最后将预处理后的样本以字典的形式添加到 train_set 或 val_set 中。
 
 # 创建词汇表
+```python
 tokenizer = Tokenizer()
 train_captions_text = [x['caption'] for x in train_set]
 tokenizer.fit_on_texts(train_captions_text)
+```
 # 将单词序列转换为数字序列
+```
 train_sequences = tokenizer.texts_to_sequences(train_captions_text)
 val_sequences = tokenizer.texts_to_sequences([x['caption'] for x in val_set])
 # 准备图像数据
@@ -335,6 +380,7 @@ num_words = len(tokenizer.word_index) + 1
 print(tokenizer.word_index)
 train_target = to_categorical(train_target.tolist(), num_words)
 val_target = to_categorical(val_target.tolist(), num_words)
+```
 
 这段代码主要是为了准备图像标注数据集，其中涉及到的函数包括：
 Tokenizer(): 一个类，用于将文本转化为单词序列，同时也可以进行词汇表的创建。
@@ -346,6 +392,7 @@ val_target = to_categorical(val_target.tolist(), num_words)
 具体来说，这段代码的功能如下：
 创建 Tokenizer 类的实例 tokenizer，并调用其 fit_on_texts 方法生成词汇表，这个词汇表中包含训练集中出现的所有单词。使用 tokenizer 对训练集和验证集中的标注文本进行数字化处理，得到 train_sequences 和 val_sequences，它们分别是训练集和验证集中所有标注文本的数字化表示。准备图像数据：从数据集中获取图像数据，并存储在 train_images 和 val_images 中。准备标签数据：首先计算出训练集中最长标注的长度 max_length，然后使用 pad_sequences 对 train_sequences 和 val_sequences 进行填充和截断，将它们的长度都变为 max_length，得到 train_captions 和 val_captions。接着，将 train_captions 和 val_captions 中的每个序列向右移动一个时间步，得到 train_target 和 val_target。对词汇表进行处理，将 '<start>' 和 '<end>' 加入词汇表中，并创建 word_index 和 reverse_word_index 两个字典，分别用于将单词转换为索引和将索引转换为单词。将 train_target 和 val_target 进行 one-hot 编码，得到 train_target 和 val_target，它们的形状都是 (样本数, 最长标注长度, 词汇表大小)。
 
+```python
 # Load pre-trained InceptionV3 model as the encoder
 encoder_inputs = Input(shape=(224, 224, 3))
 encoder = InceptionV3(weights='imagenet', include_top=False)
@@ -367,6 +414,7 @@ merged = Concatenate()([encoder_repeat, decoder_outputs])
 merged = Dense(256, activation='relu')(merged)
 merged = Dense(num_words, activation='softmax')(merged)
 model = Model(inputs=[encoder_inputs, decoder_inputs], outputs=merged)
+```
 
 这段代码定义了一个图像到文本的转换模型，使用了预训练的InceptionV3模型作为编码器(encoder)，以及一个Transformer解码器(decoder)。
 下面是每个函数的解释：
@@ -383,17 +431,21 @@ model = Model(inputs=[encoder_inputs, decoder_inputs], outputs=merged)
 Dense函数：创建一个全连接层，将256维向量映射到单词数量的概率分布，以便选择最可能的单词作为输出。这里使用了softmax激活函数。
 Model函数：创建一个Keras模型，将输入张量映射到输出张量。
 
+```python
 # Compile the model
 model.compile(loss='categorical_crossentropy', optimizer=Adam(learning_rate=0.001))
 这段代码是在编译模型。模型是神经网络中的一个重要部分，它定义了输入和输出之间的关系。编译模型是为了指定模型的训练方式和优化器。
 loss='categorical_crossentropy' 表示使用分类交叉熵作为损失函数，用于衡量模型输出与真实标签之间的差异，即模型预测的结果与实际结果之间的误差。
 optimizer=Adam(learning_rate=0.001) 表示使用Adam优化器，它是一种常用的梯度下降算法，用于更新模型中的权重参数。其中，learning_rate=0.001 表示学习率为0.001，即每一次更新权重参数时所采用的步长大小。
-
+```
+```python
 # Train the model
 history = model.fit([train_images, train_captions], train_target, epochs=EPOCHS, batch_size=BATCH_SIZE,
                     validation_data=([val_images, val_captions], val_target), callbacks=[
         ModelCheckpoint('image_captioning_model.h5', save_best_only=True, save_weights_only=True)])
 show_train_res(history)
+```
+
 这段代码的主要作用是训练一个图像描述生成模型，并将训练历史记录在 history 变量中。以下是每个参数的解释：
 train_images: 训练图像的数据集
 train_captions: 训练图像的文字描述的数据集
@@ -404,6 +456,7 @@ show_train_res(history)
 callbacks: 模型训练时的回调函数，这里使用了一个 ModelCheckpoint 回调，每次在验证集上表现最好时保存模型权重到 image_captioning_model.h5 文件中，仅保存最佳模型权重，这个文件可以在后续的推理中加载模型。
 show_train_res(history): 这个函数用于可视化训练过程中的历史记录，包括训练和验证集的损失和准确率等指标。history 变量包含了训练历史数据，包括训练损失、训练准确率、验证损失和验证准确率等。show_train_res 函数将这些指标绘制成图表，并在训练过程中实时更新。
 
+```python
 # Evaluate the model on the validation set
 res = model.evaluate([val_images, val_captions], val_target, verbose=0)
 loss = res
@@ -414,6 +467,8 @@ print(generate_caption(model, filepath, word_index, reverse_word_index, False))
 # 计算指标
 BLEU_1, BLEU_2, BLEU_3, BLEU_4, ROUGE, CIDEr, METEOR = \
     caculate_evaluation_indicator(model, val_set, word_index, reverse_word_index)
+```
+
 这段代码是一个基于深度学习的图像标注模型在验证集上的评估和指标计算。下面是函数的详细解释：
 model.evaluate([val_images, val_captions], val_target, verbose=0)：使用验证集（val_images, val_captions）作为输入，计算模型在验证集上的损失值和其他指标，并返回一个结果对象 res。其中 val_target 是对应的标签。
 loss = res：将损失值赋给变量 loss。
@@ -425,55 +480,77 @@ BLEU_1, BLEU_2, BLEU_3, BLEU_4, ROUGE, CIDEr, METEOR = \
 
 5)实验结果
 ①　Epoch=10，batch_size=32,train_percent = 0.02,val_percent = 0.1,
+
 ②　score_percent = 0.01
+
 计算输出了训练集和验证集的大小：
+
 ![image](https://github.com/neuljh/image_caption/assets/132900799/63445033-119a-4609-81a6-5ee6c21b6bd0)
+
 经过测试，发现本电脑在加载超过4w条训练集会发生内存爆炸的情况，因此这里仅仅使用部分数据集，这里加载11835条训练集和2501条验证集：
+
 ![image](https://github.com/neuljh/image_caption/assets/132900799/7a32430d-50f7-474b-9afb-8fbae3940230)
 
 得到的词汇表输出如下：
+
 ![image](https://github.com/neuljh/image_caption/assets/132900799/f71ee399-8b7e-4d25-b0cd-48812bea191c)
+
 ![image](https://github.com/neuljh/image_caption/assets/132900799/0eea2820-41aa-44ac-8c0b-11f6c57fbb52)
 
 模型结构：
+
 ![image](https://github.com/neuljh/image_caption/assets/132900799/ecfe16a7-24f7-4fa6-86a7-efa7b8c933bd)
+
 ![image](https://github.com/neuljh/image_caption/assets/132900799/ad286fda-7afb-443a-b71d-02d05255d932)
 
 
 模型训练过程：
+
 ![image](https://github.com/neuljh/image_caption/assets/132900799/f6f76deb-b4b5-4dc9-b292-cf0d6e7e2de2)
 
 验证集损失：
 ![image](https://github.com/neuljh/image_caption/assets/132900799/0fb298c6-cfb9-4438-b925-81b292634a28)
 
 自定义加载的图片进行image caption，原图片和模型结果如下：
+
 ![image](https://github.com/neuljh/image_caption/assets/132900799/95c9b1ad-6279-4886-858a-9a23226c0daa)
+
 ![image](https://github.com/neuljh/image_caption/assets/132900799/a54ae38c-f47c-4902-98cc-8c0cfb42314f)
 
 
 随机抽取25个验证集数据进行模型评估：
+
 ![image](https://github.com/neuljh/image_caption/assets/132900799/e4234696-06cc-4727-992d-9553b3c3e9e5)
 
 最终得到的评估结果：
+
 ![image](https://github.com/neuljh/image_caption/assets/132900799/d7992ffe-2dd0-41d9-952e-bbca7ed248c5)
 
 输出得到的loss变化趋势图：
+
 ![image](https://github.com/neuljh/image_caption/assets/132900799/fbc84cab-d6c8-4cda-b955-1496f8e4f449)
 
 图片的真实标题和预测标题：
+
 ![image](https://github.com/neuljh/image_caption/assets/132900799/d332c784-db5f-4fcd-b871-d5601f1db416)
 
 可以看出训练效果还是比较一般的。
+
 ③　Epoch=20，batch_size=32,train_percent = 0.03,val_percent = 0.1,
+
 ④　score_percent = 0.01
 评估结果：
+
 ![image](https://github.com/neuljh/image_caption/assets/132900799/f52b2dae-1251-4bf5-90c7-877405e63792)
 
 输出得到的loss变化趋势图：
+
 ![image](https://github.com/neuljh/image_caption/assets/132900799/f3d4b266-6590-4a0f-ba38-4227d77a40df)
 
 图片的真实标题和预测标题：
+
 ![image](https://github.com/neuljh/image_caption/assets/132900799/8ae28678-bc7d-49fc-b8e4-aa1ae8aed725)
 
 验证集损失：
+
 ![image](https://github.com/neuljh/image_caption/assets/132900799/8b95c501-2410-4172-9780-412cb866cd99)
